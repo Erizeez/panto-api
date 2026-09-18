@@ -1,0 +1,6 @@
+# Dependencies & Build artifacts
+node_modules/
+dist/
+target/
+.DS_Store
+*.log

@@ -1,0 +1,874 @@
+openapi: 3.0.3
+info:
+  title: Panto Control API
+  description: Programmable Adaptive Network Tunnel Orchestrator Controller RESTful API
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Local Panto Controller
+
+paths:
+  /version:
+    get:
+      summary: 获取核心版本信息
+      operationId: getVersion
+      responses:
+        '200':
+          description: 版本详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+
+  /status:
+    get:
+      summary: 获取系统运行状态
+      operationId: getStatus
+      responses:
+        '200':
+          description: 运行时状态详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+  /mode:
+    get:
+      summary: 获取当前运行模式与全局出口
+      operationId: getMode
+      responses:
+        '200':
+          description: 运行模式与全局出口
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModeResponse'
+    put:
+      summary: 切换运行模式与全局出口
+      operationId: setMode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetModeRequest'
+      responses:
+        '200':
+          description: 切换结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModeResponse'
+
+  /tailscale/exit-nodes:
+    get:
+      summary: 获取 Tailnet 中所有可供消费的远端 Exit Node 列表
+      operationId: getTailscaleExitNodes
+      responses:
+        '200':
+          description: Exit Node 列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailscaleExitNodesResponse'
+    put:
+      summary: 设置消费的远端 Exit Node（空字符串表示停用）
+      operationId: setTailscaleExitNode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetTailscaleExitNodeRequest'
+      responses:
+        '200':
+          description: 设置结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailscaleExitNodeResult'
+
+  /tailscale/magic-ip/pending:
+    get:
+      summary: 获取当前待处理的 Magic IP 冲突列表
+      operationId: getMagicIPPending
+      responses:
+        '200':
+          description: 待处理冲突列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPPendingResponse'
+
+  /tailscale/magic-ip/choices:
+    get:
+      summary: 获取所有已记住的 Magic IP 偏好设置
+      operationId: getMagicIPChoices
+      responses:
+        '200':
+          description: 已记住的偏好列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPChoicesResponse'
+
+  /tailscale/magic-ip/decide:
+    post:
+      summary: 用户提交对特定冲突 IP 的路由选择
+      operationId: decideMagicIP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicIPDecideRequest'
+      responses:
+        '200':
+          description: 决策提交结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPDecideResponse'
+
+  /tailscale/magic-ip/choices/{ip}:
+    delete:
+      summary: 清除特定 IP 的用户记忆偏好
+      operationId: deleteMagicIPChoice
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 清除结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPDeleteResponse'
+
+  /topology:
+    get:
+      summary: 获取链路有向图拓扑
+      operationId: getTopology
+      responses:
+        '200':
+          description: 拓扑节点与依赖链详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopologyResponse'
+
+  /groups:
+    get:
+      summary: 获取全部策略分组
+      operationId: getGroups
+      responses:
+        '200':
+          description: 分组列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupsResponse'
+
+  /groups/{id}:
+    get:
+      summary: 获取单个策略组详情
+      operationId: getGroup
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 分组详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupItem'
+        '404':
+          description: 分组不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /groups/{id}/select:
+    put:
+      summary: 切换选择组的活跃端点
+      operationId: selectGroupMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectMemberRequest'
+      responses:
+        '200':
+          description: 切换成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelectMemberResponse'
+        '400':
+          description: 请求非法或成员不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /groups/{id}/delay:
+    post:
+      summary: 对策略组内所有节点并发测速
+      operationId: testGroupDelay
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DelayTestRequest'
+      responses:
+        '200':
+          description: 测速结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelayTestResponse'
+
+  /rules:
+    get:
+      summary: 获取全部规则列表
+      operationId: getRules
+      responses:
+        '200':
+          description: 规则列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesResponse'
+
+  /rules/match:
+    post:
+      summary: 模拟规则匹配测试
+      operationId: matchRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleMatchRequest'
+      responses:
+        '200':
+          description: 匹配结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleMatchResponse'
+
+  /traffic:
+    get:
+      summary: 获取当前流量速率统计
+      operationId: getTraffic
+      responses:
+        '200':
+          description: 流量状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrafficResponse'
+
+  /config:
+    get:
+      summary: 获取原始配置文件内容
+      operationId: getConfig
+      responses:
+        '200':
+          description: 配置内容
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigResponse'
+
+  /probe/sites:
+    get:
+      summary: 获取预置全球常见测试网站列表
+      operationId: getProbeSites
+      responses:
+        '200':
+          description: 预置站点列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProbeSitesResponse'
+
+  /probe/test:
+    post:
+      summary: 对单个或全部预置网站执行分流解析与连通性测速
+      operationId: testProbeSites
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProbeTestRequest'
+      responses:
+        '200':
+          description: 探测结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProbeTestResponse'
+
+  /probe/stream:
+    get:
+      summary: 实时流式并发测速 (Server-Sent Events)
+      operationId: streamProbeSites
+      parameters:
+        - name: timeout_ms
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 实时 SSE 测速结果流
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  schemas:
+    VersionResponse:
+      type: object
+      required:
+        - version
+        - os
+        - arch
+        - compiler
+      properties:
+        version:
+          type: string
+        os:
+          type: string
+        arch:
+          type: string
+        compiler:
+          type: string
+
+    StatusResponse:
+      type: object
+      required:
+        - running
+        - uptime_seconds
+        - mixed_port
+        - active_endpoints
+        - active_groups
+        - active_rules
+      properties:
+        running:
+          type: boolean
+        uptime_seconds:
+          type: integer
+        mixed_port:
+          type: integer
+        mode:
+          type: string
+        global_target:
+          type: string
+        active_endpoints:
+          type: integer
+        active_groups:
+          type: integer
+        active_rules:
+          type: integer
+        assigned_ip:
+          type: string
+
+    ModeResponse:
+      type: object
+      required:
+        - mode
+        - global_target
+      properties:
+        mode:
+          type: string
+        global_target:
+          type: string
+
+    SetModeRequest:
+      type: object
+      required:
+        - mode
+      properties:
+        mode:
+          type: string
+        global_target:
+          type: string
+
+    TailscaleExitNodeItem:
+      type: object
+      required:
+        - id
+        - hostname
+        - dns_name
+        - ips
+        - online
+        - selected
+      properties:
+        id:
+          type: string
+        hostname:
+          type: string
+        dns_name:
+          type: string
+        ips:
+          type: array
+          items:
+            type: string
+        online:
+          type: boolean
+        selected:
+          type: boolean
+
+    TailscaleExitNodesResponse:
+      type: object
+      required:
+        - nodes
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TailscaleExitNodeItem'
+
+    SetTailscaleExitNodeRequest:
+      type: object
+      required:
+        - selected
+      properties:
+        selected:
+          type: string
+
+    TailscaleExitNodeResult:
+      type: object
+      required:
+        - selected
+      properties:
+        selected:
+          type: string
+
+    MagicIPCandidate:
+      type: object
+      required:
+        - endpoint_id
+        - priority
+        - hostname
+        - online
+      properties:
+        endpoint_id:
+          type: string
+        priority:
+          type: integer
+        hostname:
+          type: string
+        dns_name:
+          type: string
+        online:
+          type: boolean
+
+    MagicIPConflictItem:
+      type: object
+      required:
+        - ip
+        - candidates
+        - last_used_endpoint
+      properties:
+        ip:
+          type: string
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagicIPCandidate'
+        detected_at:
+          type: string
+        last_used_endpoint:
+          type: string
+
+    MagicIPPendingResponse:
+      type: object
+      required:
+        - conflicts
+      properties:
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagicIPConflictItem'
+
+    MagicIPChoiceItem:
+      type: object
+      required:
+        - ip
+        - endpoint
+        - remember
+      properties:
+        ip:
+          type: string
+        endpoint:
+          type: string
+        peer_hostname:
+          type: string
+        remember:
+          type: boolean
+        updated_at:
+          type: string
+
+    MagicIPChoicesResponse:
+      type: object
+      required:
+        - choices
+      properties:
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagicIPChoiceItem'
+
+    MagicIPDecideRequest:
+      type: object
+      required:
+        - ip
+        - endpoint
+        - remember
+      properties:
+        ip:
+          type: string
+        endpoint:
+          type: string
+        remember:
+          type: boolean
+
+    MagicIPDecideResponse:
+      type: object
+      required:
+        - success
+        - ip
+        - endpoint
+      properties:
+        success:
+          type: boolean
+        ip:
+          type: string
+        endpoint:
+          type: string
+
+    MagicIPDeleteResponse:
+      type: object
+      required:
+        - success
+        - ip
+      properties:
+        success:
+          type: boolean
+        ip:
+          type: string
+
+    TopologyNode:
+      type: object
+      required:
+        - id
+        - kind
+        - effective_mtu
+        - overhead
+        - path
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        underlay:
+          type: string
+        effective_mtu:
+          type: integer
+        overhead:
+          type: integer
+        dependents:
+          type: array
+          items:
+            type: string
+        path:
+          type: array
+          items:
+            type: string
+
+    TopologyResponse:
+      type: object
+      required:
+        - nodes
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopologyNode'
+
+    GroupItem:
+      type: object
+      required:
+        - id
+        - kind
+        - members
+        - current
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+        current:
+          type: string
+        delays:
+          type: object
+          additionalProperties:
+            type: integer
+
+    GroupsResponse:
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupItem'
+
+    SelectMemberRequest:
+      type: object
+      required:
+        - selected
+      properties:
+        selected:
+          type: string
+
+    SelectMemberResponse:
+      type: object
+      required:
+        - id
+        - current
+      properties:
+        id:
+          type: string
+        current:
+          type: string
+
+    DelayTestRequest:
+      type: object
+      properties:
+        url:
+          type: string
+        timeout_ms:
+          type: integer
+
+    DelayTestResponse:
+      type: object
+      required:
+        - id
+        - delays
+      properties:
+        id:
+          type: string
+        delays:
+          type: object
+          additionalProperties:
+            type: integer
+
+    RuleItem:
+      type: object
+      required:
+        - raw
+        - type
+        - payload
+        - target
+      properties:
+        raw:
+          type: string
+        type:
+          type: string
+        payload:
+          type: string
+        target:
+          type: string
+
+    RulesResponse:
+      type: object
+      required:
+        - rules
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleItem'
+
+    RuleMatchRequest:
+      type: object
+      required:
+        - host
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+
+    RuleMatchResponse:
+      type: object
+      required:
+        - matched
+        - rule_target
+        - selected_endpoint
+        - chain
+      properties:
+        matched:
+          type: boolean
+        rule_target:
+          type: string
+        selected_endpoint:
+          type: string
+        chain:
+          type: array
+          items:
+            type: string
+
+    TrafficResponse:
+      type: object
+      required:
+        - up_bytes
+        - down_bytes
+        - up_rate_bps
+        - down_rate_bps
+      properties:
+        up_bytes:
+          type: integer
+          format: int64
+        down_bytes:
+          type: integer
+          format: int64
+        up_rate_bps:
+          type: integer
+          format: int64
+        down_rate_bps:
+          type: integer
+          format: int64
+
+    ConfigResponse:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+
+    ProbeSite:
+      type: object
+      required:
+        - id
+        - name
+        - domain
+        - port
+        - category
+        - icon
+        - description
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        domain:
+          type: string
+        port:
+          type: integer
+        category:
+          type: string
+        icon:
+          type: string
+        description:
+          type: string
+
+    ProbeSitesResponse:
+      type: object
+      required:
+        - sites
+      properties:
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProbeSite'
+
+    ProbeTestRequest:
+      type: object
+      properties:
+        site_id:
+          type: string
+        timeout_ms:
+          type: integer
+
+    ProbeResultItem:
+      type: object
+      required:
+        - id
+        - domain
+        - rule_target
+        - selected_endpoint
+        - chain
+        - latency_ms
+        - status
+      properties:
+        id:
+          type: string
+        domain:
+          type: string
+        rule_target:
+          type: string
+        selected_endpoint:
+          type: string
+        chain:
+          type: array
+          items:
+            type: string
+        latency_ms:
+          type: integer
+        status:
+          type: string
+        error:
+          type: string
+
+    ProbeTestResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProbeResultItem'

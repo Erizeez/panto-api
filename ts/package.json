@@ -1,0 +1,44 @@
+{
+  "name": "@erizeez/panto-api",
+  "version": "0.1.0",
+  "description": "Official TypeScript & JavaScript Client SDK for Panto API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Erizeez/panto-api.git"
+  },
+  "keywords": [
+    "panto",
+    "vpn",
+    "tunnel",
+    "network-orchestrator",
+    "openapi",
+    "sdk"
+  ],
+  "author": "Erizeez",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

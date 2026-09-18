@@ -1,0 +1,20 @@
+[package]
+name = "panto-api"
+version = "0.1.0"
+edition = "2021"
+authors = ["Erizeez"]
+description = "Official Rust client SDK for Panto Network Tunnel Orchestrator API"
+license = "MIT"
+repository = "https://github.com/Erizeez/panto-api"
+keywords = ["panto", "tunnel", "vpn", "api", "sdk"]
+categories = ["network-programming", "api-bindings"]
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+url = "2.5"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
