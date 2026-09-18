@@ -13,7 +13,7 @@ Official OpenAPI 3.0.3 specification and multi-language client SDKs (Go, TypeScr
 | Language | Package / Module | Registry / Path | Installation |
 | :--- | :--- | :--- | :--- |
 | **Go** | `github.com/Erizeez/panto-api/go` | [pkg.go.dev](https://pkg.go.dev/github.com/Erizeez/panto-api/go) | `go get github.com/Erizeez/panto-api/go` |
-| **TypeScript / JS** | `@erizeez/panto-api` | [npmjs.com](https://www.npmjs.com/package/@erizeez/panto-api) | `npm install @erizeez/panto-api` |
+| **TypeScript / JS** | `@erizeez/panto-api` | [GitHub Packages](https://github.com/Erizeez/panto-api/packages) | `npm install @erizeez/panto-api` |
 | **Rust** | `panto-api` | [crates.io](https://crates.io/crates/panto-api) / Git | `cargo add panto-api` |
 
 ---
@@ -22,6 +22,12 @@ Official OpenAPI 3.0.3 specification and multi-language client SDKs (Go, TypeScr
 
 ### 1. TypeScript / JavaScript (Node.js, Bun, Deno, Browser)
 
+Add GitHub Packages registry to your `.npmrc`:
+```ini
+@erizeez:registry=https://npm.pkg.github.com
+```
+
+Then install:
 ```bash
 npm install @erizeez/panto-api
 ```
@@ -125,17 +131,17 @@ panto-api/
 
 ---
 
-## 🚢 Publishing to npm
+## 🚢 Publishing to GitHub Packages
 
-This repository includes automated CI/CD for publishing `@erizeez/panto-api` to the official npm registry:
+This repository includes automated CI/CD for publishing `@erizeez/panto-api` to GitHub Packages:
 
-1. Add your npm access token as a GitHub Actions secret named `NPM_TOKEN` (Settings -> Secrets and variables -> Actions -> New repository secret).
-2. Create and push a git tag:
+1. Create and push a git tag:
    ```bash
    git tag v0.1.0
    git push origin v0.1.0
    ```
-3. GitHub Actions will automatically test, build, and publish `@erizeez/panto-api` to [npmjs.com](https://www.npmjs.com/package/@erizeez/panto-api).
+2. GitHub Actions will automatically test, build, and publish `@erizeez/panto-api` using the built-in `GITHUB_TOKEN`.
+3. The package will immediately be available at [GitHub Packages](https://github.com/Erizeez/panto-api/packages).
 
 ---
 
