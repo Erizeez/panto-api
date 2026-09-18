@@ -109,19 +109,17 @@ pub struct MagicIPDeleteResponse {
     pub status: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TopologyNode {
     pub id: String,
-    pub name: String,
-    pub r#type: String,
+    pub kind: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
+    pub underlay: Option<String>,
+    pub effective_mtu: i32,
+    pub overhead: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dependencies: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub latency_ms: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub online: Option<bool>,
+    pub dependents: Option<Vec<String>>,
+    pub path: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

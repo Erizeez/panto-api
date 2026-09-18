@@ -92,12 +92,12 @@ export interface MagicIPDeleteResponse {
 
 export interface TopologyNode {
   id: string;
-  name: string;
-  type: string;
-  target?: string;
-  dependencies?: string[];
-  latency_ms?: number;
-  online?: boolean;
+  kind: string;
+  underlay?: string;
+  effective_mtu: number;
+  overhead: number;
+  dependents?: string[];
+  path: string[];
 }
 
 export interface TopologyResponse {
