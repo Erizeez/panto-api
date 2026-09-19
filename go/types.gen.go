@@ -25,6 +25,15 @@ const (
 	Timeout ProbeResultItemStatus = "timeout"
 )
 
+// ConfigResponse defines model for ConfigResponse.
+type ConfigResponse struct {
+	// Content 生效的原始 YAML 配置内容
+	Content string `json:"content"`
+
+	// Version 配置格式版本
+	Version *string `json:"version"`
+}
+
 // DecideConsentRequest defines model for DecideConsentRequest.
 type DecideConsentRequest struct {
 	// Status 决策结果
@@ -68,6 +77,22 @@ type FlowsResponse struct {
 	Total int          `json:"total"`
 }
 
+// GroupDelayRequest defines model for GroupDelayRequest.
+type GroupDelayRequest struct {
+	// TimeoutMs 测速超时毫秒
+	TimeoutMs *int64 `json:"timeout_ms,omitempty"`
+
+	// Url 自定义探测测试 URL
+	Url *string `json:"url,omitempty"`
+}
+
+// GroupDelayResponse defines model for GroupDelayResponse.
+type GroupDelayResponse struct {
+	// Delays 节点 ID 对应 RTT 延迟 (ms)
+	Delays  map[string]int64 `json:"delays"`
+	GroupId string           `json:"group_id"`
+}
+
 // GroupItem defines model for GroupItem.
 type GroupItem struct {
 	Id       string   `json:"id"`
@@ -79,6 +104,51 @@ type GroupItem struct {
 // GroupsResponse defines model for GroupsResponse.
 type GroupsResponse struct {
 	Groups []GroupItem `json:"groups"`
+}
+
+// MagicIPCandidate defines model for MagicIPCandidate.
+type MagicIPCandidate struct {
+	DeviceName string `json:"device_name"`
+	Ip         string `json:"ip"`
+	Source     string `json:"source"`
+}
+
+// MagicIPChoiceItem defines model for MagicIPChoiceItem.
+type MagicIPChoiceItem struct {
+	ChosenDevice string `json:"chosen_device"`
+	Ip           string `json:"ip"`
+}
+
+// MagicIPChoicesResponse defines model for MagicIPChoicesResponse.
+type MagicIPChoicesResponse struct {
+	Choices []MagicIPChoiceItem `json:"choices"`
+}
+
+// MagicIPConflictItem defines model for MagicIPConflictItem.
+type MagicIPConflictItem struct {
+	Candidates []MagicIPCandidate `json:"candidates"`
+	ConflictIp string             `json:"conflict_ip"`
+}
+
+// MagicIPDecideRequest defines model for MagicIPDecideRequest.
+type MagicIPDecideRequest struct {
+	ChosenDevice string `json:"chosen_device"`
+	ConflictIp   string `json:"conflict_ip"`
+}
+
+// MagicIPDecideResponse defines model for MagicIPDecideResponse.
+type MagicIPDecideResponse struct {
+	Status string `json:"status"`
+}
+
+// MagicIPDeleteResponse defines model for MagicIPDeleteResponse.
+type MagicIPDeleteResponse struct {
+	Status string `json:"status"`
+}
+
+// MagicIPPendingResponse defines model for MagicIPPendingResponse.
+type MagicIPPendingResponse struct {
+	Conflicts []MagicIPConflictItem `json:"conflicts"`
 }
 
 // ModeResponse defines model for ModeResponse.
@@ -174,6 +244,34 @@ type PushResultRecord struct {
 	UploadBytes    int64   `json:"upload_bytes"`
 }
 
+// RuleItem defines model for RuleItem.
+type RuleItem struct {
+	Matcher string `json:"matcher"`
+	Raw     string `json:"raw"`
+	Target  string `json:"target"`
+}
+
+// RuleMatchRequest defines model for RuleMatchRequest.
+type RuleMatchRequest struct {
+	Domain   *string `json:"domain,omitempty"`
+	Ip       *string `json:"ip,omitempty"`
+	Port     *int    `json:"port,omitempty"`
+	Protocol *string `json:"protocol,omitempty"`
+}
+
+// RuleMatchResponse defines model for RuleMatchResponse.
+type RuleMatchResponse struct {
+	Matched bool    `json:"matched"`
+	Rule    *string `json:"rule"`
+	Target  *string `json:"target"`
+}
+
+// RulesResponse defines model for RulesResponse.
+type RulesResponse struct {
+	Rules []RuleItem `json:"rules"`
+	Total int        `json:"total"`
+}
+
 // SelectGroupRequest defines model for SelectGroupRequest.
 type SelectGroupRequest struct {
 	// Selected 目标节点 ID
@@ -193,6 +291,12 @@ type SetModeRequest struct {
 	Mode       string  `json:"mode"`
 }
 
+// SetTailscaleExitNodeRequest defines model for SetTailscaleExitNodeRequest.
+type SetTailscaleExitNodeRequest struct {
+	// NodeId 目标出口节点 ID，空字符串表示关闭出口节点
+	NodeId string `json:"node_id"`
+}
+
 // StatusResponse defines model for StatusResponse.
 type StatusResponse struct {
 	// ConnectionsCount 当前活跃连接流数量
@@ -210,6 +314,27 @@ type StatusResponse struct {
 
 	// UptimeSeconds 进程启动运行秒数
 	UptimeSeconds int64 `json:"uptime_seconds"`
+}
+
+// TailscaleExitNodeItem defines model for TailscaleExitNodeItem.
+type TailscaleExitNodeItem struct {
+	Active   bool    `json:"active"`
+	Id       string  `json:"id"`
+	Ip       string  `json:"ip"`
+	Location *string `json:"location"`
+	Name     string  `json:"name"`
+	Online   bool    `json:"online"`
+}
+
+// TailscaleExitNodeResult defines model for TailscaleExitNodeResult.
+type TailscaleExitNodeResult struct {
+	// ActiveNode 当前生效激活的出口节点 ID
+	ActiveNode string `json:"active_node"`
+}
+
+// TailscaleExitNodesResponse defines model for TailscaleExitNodesResponse.
+type TailscaleExitNodesResponse struct {
+	ExitNodes []TailscaleExitNodeItem `json:"exit_nodes"`
 }
 
 // TopologyGraph defines model for TopologyGraph.
@@ -252,6 +377,18 @@ type VersionResponse struct {
 	Version   string `json:"version"`
 }
 
+// StreamProbeSitesParams defines parameters for StreamProbeSites.
+type StreamProbeSitesParams struct {
+	// TimeoutMs 单站点探测超时毫秒数
+	TimeoutMs *int `form:"timeout_ms,omitempty" json:"timeout_ms,omitempty"`
+
+	// Category 可选过滤站点分类
+	Category *string `form:"category,omitempty" json:"category,omitempty"`
+}
+
+// TestGroupDelayJSONRequestBody defines body for TestGroupDelay for application/json ContentType.
+type TestGroupDelayJSONRequestBody = GroupDelayRequest
+
 // SelectGroupMemberJSONRequestBody defines body for SelectGroupMember for application/json ContentType.
 type SelectGroupMemberJSONRequestBody = SelectGroupRequest
 
@@ -263,3 +400,12 @@ type DecideObservationConsentJSONRequestBody = DecideConsentRequest
 
 // TestProbeSitesJSONRequestBody defines body for TestProbeSites for application/json ContentType.
 type TestProbeSitesJSONRequestBody = ProbeTestRequest
+
+// MatchRuleJSONRequestBody defines body for MatchRule for application/json ContentType.
+type MatchRuleJSONRequestBody = RuleMatchRequest
+
+// SetTailscaleExitNodeJSONRequestBody defines body for SetTailscaleExitNode for application/json ContentType.
+type SetTailscaleExitNodeJSONRequestBody = SetTailscaleExitNodeRequest
+
+// DecideMagicIPJSONRequestBody defines body for DecideMagicIP for application/json ContentType.
+type DecideMagicIPJSONRequestBody = MagicIPDecideRequest

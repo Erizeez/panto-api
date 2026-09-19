@@ -40,6 +40,11 @@ export interface SetModeRequest {
   global_exit?: string;
 }
 
+export interface ConfigResponse {
+  content: string;
+  version?: string | null;
+}
+
 export interface TopologyNode {
   id: string;
   kind: string;
@@ -74,6 +79,40 @@ export interface SelectGroupResponse {
   success: boolean;
   group_id: string;
   selected: string;
+}
+
+export interface GroupDelayRequest {
+  url?: string;
+  timeout_ms?: number;
+}
+
+export interface GroupDelayResponse {
+  group_id: string;
+  delays: Record<string, number>;
+}
+
+export interface RuleItem {
+  raw: string;
+  matcher: string;
+  target: string;
+}
+
+export interface RulesResponse {
+  total: number;
+  rules: RuleItem[];
+}
+
+export interface RuleMatchRequest {
+  domain?: string;
+  ip?: string;
+  port?: number;
+  protocol?: string;
+}
+
+export interface RuleMatchResponse {
+  matched: boolean;
+  rule?: string | null;
+  target?: string | null;
 }
 
 export interface FlowRecord {
@@ -133,6 +172,64 @@ export interface ProbeTestResponse {
   reachable: number;
   failed: number;
   results: ProbeResultItem[];
+}
+
+export interface TailscaleExitNodeItem {
+  id: string;
+  name: string;
+  ip: string;
+  online: boolean;
+  active: boolean;
+  location?: string | null;
+}
+
+export interface TailscaleExitNodesResponse {
+  exit_nodes: TailscaleExitNodeItem[];
+}
+
+export interface SetTailscaleExitNodeRequest {
+  node_id: string;
+}
+
+export interface TailscaleExitNodeResult {
+  active_node: string;
+}
+
+export interface MagicIPCandidate {
+  ip: string;
+  device_name: string;
+  source: string;
+}
+
+export interface MagicIPConflictItem {
+  conflict_ip: string;
+  candidates: MagicIPCandidate[];
+}
+
+export interface MagicIPPendingResponse {
+  conflicts: MagicIPConflictItem[];
+}
+
+export interface MagicIPChoiceItem {
+  ip: string;
+  chosen_device: string;
+}
+
+export interface MagicIPChoicesResponse {
+  choices: MagicIPChoiceItem[];
+}
+
+export interface MagicIPDecideRequest {
+  conflict_ip: string;
+  chosen_device: string;
+}
+
+export interface MagicIPDecideResponse {
+  status: string;
+}
+
+export interface MagicIPDeleteResponse {
+  status: string;
 }
 
 export type ConsentStatus = 'pending' | 'granted' | 'denied' | 'revoked';

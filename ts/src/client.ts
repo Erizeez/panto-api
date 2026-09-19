@@ -3,14 +3,28 @@ import type {
   StatusResponse,
   ModeResponse,
   SetModeRequest,
+  ConfigResponse,
   TopologyGraph,
   GroupsResponse,
   SelectGroupRequest,
   SelectGroupResponse,
+  GroupDelayRequest,
+  GroupDelayResponse,
+  RulesResponse,
+  RuleMatchRequest,
+  RuleMatchResponse,
   FlowsResponse,
   ProbeSitesResponse,
   ProbeTestRequest,
   ProbeTestResponse,
+  TailscaleExitNodesResponse,
+  SetTailscaleExitNodeRequest,
+  TailscaleExitNodeResult,
+  MagicIPPendingResponse,
+  MagicIPChoicesResponse,
+  MagicIPDecideRequest,
+  MagicIPDecideResponse,
+  MagicIPDeleteResponse,
   ObservationConsentItem,
   DecideConsentRequest,
   DecideConsentResponse,
@@ -103,6 +117,11 @@ export class PantoClient {
     });
   }
 
+  // ── Config ──────────────────────────────────────────────────────────
+  async getConfig(): Promise<ConfigResponse> {
+    return this.request<ConfigResponse>('/config');
+  }
+
   // ── Topology & Routing ──────────────────────────────────────────────
   async getTopology(): Promise<TopologyGraph> {
     return this.request<TopologyGraph>('/topology');
@@ -122,6 +141,28 @@ export class PantoClient {
     });
   }
 
+  async testGroupDelay(
+    groupId: string,
+    request?: GroupDelayRequest
+  ): Promise<GroupDelayResponse> {
+    return this.request<GroupDelayResponse>(`/groups/${encodeURIComponent(groupId)}/delay`, {
+      method: 'POST',
+      body: request ? JSON.stringify(request) : undefined,
+    });
+  }
+
+  // ── Rules ───────────────────────────────────────────────────────────
+  async getRules(): Promise<RulesResponse> {
+    return this.request<RulesResponse>('/rules');
+  }
+
+  async matchRule(request: RuleMatchRequest): Promise<RuleMatchResponse> {
+    return this.request<RuleMatchResponse>('/rules/match', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
   // ── Flows ───────────────────────────────────────────────────────────
   async getFlows(): Promise<FlowsResponse> {
     return this.request<FlowsResponse>('/flows');
@@ -137,6 +178,52 @@ export class PantoClient {
       method: 'POST',
       body: request ? JSON.stringify(request) : undefined,
     });
+  }
+
+  getProbeStreamUrl(options: { timeoutMs?: number; category?: string } = {}): string {
+    const params = new URLSearchParams();
+    if (options.timeoutMs) params.set('timeout_ms', String(options.timeoutMs));
+    if (options.category) params.set('category', options.category);
+    const qs = params.toString();
+    return `${this.baseUrl}/api/v1/probe/stream${qs ? `?${qs}` : ''}`;
+  }
+
+  // ── Tailscale ───────────────────────────────────────────────────────
+  async getTailscaleExitNodes(): Promise<TailscaleExitNodesResponse> {
+    return this.request<TailscaleExitNodesResponse>('/tailscale/exit-nodes');
+  }
+
+  async setTailscaleExitNode(
+    request: SetTailscaleExitNodeRequest
+  ): Promise<TailscaleExitNodeResult> {
+    return this.request<TailscaleExitNodeResult>('/tailscale/exit-nodes', {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getMagicIPPending(): Promise<MagicIPPendingResponse> {
+    return this.request<MagicIPPendingResponse>('/tailscale/magic-ip/pending');
+  }
+
+  async getMagicIPChoices(): Promise<MagicIPChoicesResponse> {
+    return this.request<MagicIPChoicesResponse>('/tailscale/magic-ip/choices');
+  }
+
+  async decideMagicIP(request: MagicIPDecideRequest): Promise<MagicIPDecideResponse> {
+    return this.request<MagicIPDecideResponse>('/tailscale/magic-ip/decide', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async deleteMagicIPChoice(ip: string): Promise<MagicIPDeleteResponse> {
+    return this.request<MagicIPDeleteResponse>(
+      `/tailscale/magic-ip/choices/${encodeURIComponent(ip)}`,
+      {
+        method: 'DELETE',
+      }
+    );
   }
 
   // ── Observation ─────────────────────────────────────────────────────

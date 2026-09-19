@@ -16,9 +16,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_client_instantiation() {
+    fn test_client_instantiation_and_probe_stream_url() {
         let client = PantoClient::new("http://127.0.0.1:9090").unwrap();
         assert_eq!(client.endpoint("api/v1/status").unwrap().as_str(), "http://127.0.0.1:9090/api/v1/status");
+
+        let stream_url = client.probe_stream_url(Some(5000), Some("ai")).unwrap();
+        assert_eq!(
+            stream_url.as_str(),
+            "http://127.0.0.1:9090/api/v1/probe/stream?timeout_ms=5000&category=ai"
+        );
     }
 
     #[test]
@@ -56,18 +62,34 @@ mod tests {
     }
 
     #[test]
-    fn test_observation_consent_record() {
-        let json = r#"{
-            "node_id": "wg-jp",
-            "provider_name": "Acme VPN",
-            "url": "https://obs.acme.com/push",
-            "status": "pending",
-            "requested_at_ms": 1726700000000
-        }"#;
+    fn test_rules_and_config_models() {
+        let config_json = r#"{"content":"version: 1.0\nmode: rule\n","version":"1.0"}"#;
+        let config_resp: ConfigResponse = serde_json::from_str(config_json).unwrap();
+        assert_eq!(config_resp.version.as_deref(), Some("1.0"));
 
-        let item: ObservationConsentItem = serde_json::from_str(json).expect("should deserialize");
-        assert_eq!(item.node_id, "wg-jp");
-        assert_eq!(item.provider_name.as_deref(), Some("Acme VPN"));
-        assert_eq!(item.status, "pending");
+        let rule_json = r#"{"matched":true,"rule":"DOMAIN-SUFFIX,google.com,Global-Proxy","target":"Global-Proxy"}"#;
+        let match_resp: RuleMatchResponse = serde_json::from_str(rule_json).unwrap();
+        assert!(match_resp.matched);
+        assert_eq!(match_resp.target.as_deref(), Some("Global-Proxy"));
+    }
+
+    #[test]
+    fn test_tailscale_models() {
+        let json = r#"{
+            "exit_nodes": [
+                {
+                    "id": "node-1",
+                    "name": "jp-exit",
+                    "ip": "100.64.0.1",
+                    "online": true,
+                    "active": true,
+                    "location": "Tokyo"
+                }
+            ]
+        }"#;
+        let resp: TailscaleExitNodesResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.exit_nodes.len(), 1);
+        assert_eq!(resp.exit_nodes[0].name, "jp-exit");
+        assert!(resp.exit_nodes[0].active);
     }
 }

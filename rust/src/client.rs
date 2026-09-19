@@ -102,6 +102,13 @@ impl PantoClient {
         self.request(self.client.put(url).json(req)).await
     }
 
+    // ── Config ──────────────────────────────────────────────────────────
+    /// 获取生效配置内容
+    pub async fn get_config(&self) -> Result<ConfigResponse> {
+        let url = self.endpoint("api/v1/config")?;
+        self.request(self.client.get(url)).await
+    }
+
     // ── Topology & Routing ──────────────────────────────────────────────
     /// 获取活跃网络拓扑图
     pub async fn get_topology(&self) -> Result<TopologyGraph> {
@@ -123,6 +130,33 @@ impl PantoClient {
     ) -> Result<SelectGroupResponse> {
         let url = self.endpoint(&format!("api/v1/groups/{}/select", group_id))?;
         self.request(self.client.put(url).json(req)).await
+    }
+
+    /// 对策略组成员并发测速
+    pub async fn test_group_delay(
+        &self,
+        group_id: &str,
+        req: Option<&GroupDelayRequest>,
+    ) -> Result<GroupDelayResponse> {
+        let url = self.endpoint(&format!("api/v1/groups/{}/delay", group_id))?;
+        let mut rb = self.client.post(url);
+        if let Some(r) = req {
+            rb = rb.json(r);
+        }
+        self.request(rb).await
+    }
+
+    // ── Rules ───────────────────────────────────────────────────────────
+    /// 获取当前生效的全部路由规则
+    pub async fn get_rules(&self) -> Result<RulesResponse> {
+        let url = self.endpoint("api/v1/rules")?;
+        self.request(self.client.get(url)).await
+    }
+
+    /// 模拟流量在规则引擎中的匹配计算
+    pub async fn match_rule(&self, req: &RuleMatchRequest) -> Result<RuleMatchResponse> {
+        let url = self.endpoint("api/v1/rules/match")?;
+        self.request(self.client.post(url).json(req)).await
     }
 
     // ── Flows ───────────────────────────────────────────────────────────
@@ -150,6 +184,65 @@ impl PantoClient {
             rb = rb.json(r);
         }
         self.request(rb).await
+    }
+
+    /// 获取实时 SSE 流式测速 URL
+    pub fn probe_stream_url(
+        &self,
+        timeout_ms: Option<u64>,
+        category: Option<&str>,
+    ) -> Result<Url> {
+        let mut url = self.endpoint("api/v1/probe/stream")?;
+        if let Some(ms) = timeout_ms {
+            url.query_pairs_mut().append_pair("timeout_ms", &ms.to_string());
+        }
+        if let Some(cat) = category {
+            url.query_pairs_mut().append_pair("category", cat);
+        }
+        Ok(url)
+    }
+
+    // ── Tailscale ───────────────────────────────────────────────────────
+    /// 获取 Tailscale 出口节点列表
+    pub async fn get_tailscale_exit_nodes(&self) -> Result<TailscaleExitNodesResponse> {
+        let url = self.endpoint("api/v1/tailscale/exit-nodes")?;
+        self.request(self.client.get(url)).await
+    }
+
+    /// 设置消费的 Tailscale 出口节点
+    pub async fn set_tailscale_exit_node(
+        &self,
+        req: &SetTailscaleExitNodeRequest,
+    ) -> Result<TailscaleExitNodeResult> {
+        let url = self.endpoint("api/v1/tailscale/exit-nodes")?;
+        self.request(self.client.put(url).json(req)).await
+    }
+
+    /// 获取当前待处理的 Magic-IP 冲突列表
+    pub async fn get_magic_ip_pending(&self) -> Result<MagicIPPendingResponse> {
+        let url = self.endpoint("api/v1/tailscale/magic-ip/pending")?;
+        self.request(self.client.get(url)).await
+    }
+
+    /// 获取历史已决断的 Magic-IP 决策
+    pub async fn get_magic_ip_choices(&self) -> Result<MagicIPChoicesResponse> {
+        let url = self.endpoint("api/v1/tailscale/magic-ip/choices")?;
+        self.request(self.client.get(url)).await
+    }
+
+    /// 提交特定冲突 IP 的设备归属裁决
+    pub async fn decide_magic_ip(
+        &self,
+        req: &MagicIPDecideRequest,
+    ) -> Result<MagicIPDecideResponse> {
+        let url = self.endpoint("api/v1/tailscale/magic-ip/decide")?;
+        self.request(self.client.post(url).json(req)).await
+    }
+
+    /// 撤销特定 IP 的裁决记录
+    pub async fn delete_magic_ip_choice(&self, ip: &str) -> Result<MagicIPDeleteResponse> {
+        let url = self.endpoint(&format!("api/v1/tailscale/magic-ip/choices/{}", ip))?;
+        self.request(self.client.delete(url)).await
     }
 
     // ── Observation ─────────────────────────────────────────────────────

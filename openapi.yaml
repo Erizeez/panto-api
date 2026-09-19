@@ -17,12 +17,18 @@ servers:
 tags:
   - name: System
     description: Daemon core lifecycle, status, version and routing mode controls
+  - name: Config
+    description: Active declarative configuration inspection
   - name: Topology
     description: Overlay/underlay DAG topology visualization and dynamic group selection
+  - name: Rules
+    description: Traffic routing rules inspection and match simulation
   - name: Flows
     description: Real-time active connection tracking and byte-level accounting
   - name: Probe
     description: Latency benchmarking across 50+ global key web services
+  - name: Tailscale
+    description: Tailscale exit nodes management and Magic-IP conflict decision
   - name: Observation
     description: Secondary provider usage telemetry (POPP) and user consent management
 
@@ -83,6 +89,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/ModeResponse'
 
+  /config:
+    get:
+      tags: [Config]
+      summary: 获取当前运行态生效的原始配置文本
+      operationId: getConfig
+      responses:
+        '200':
+          description: 原始配置内容
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigResponse'
+
   /topology:
     get:
       tags: [Topology]
@@ -141,6 +160,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /groups/{id}/delay:
+    post:
+      tags: [Topology]
+      summary: 对策略组内所有成员节点并发执行延迟测速
+      operationId: testGroupDelay
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 策略组 ID
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupDelayRequest'
+      responses:
+        '200':
+          description: 策略组成员测速延迟结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDelayResponse'
+        '404':
+          description: 策略组不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /rules:
+    get:
+      tags: [Rules]
+      summary: 获取所有生效的分流规则列表
+      operationId: getRules
+      responses:
+        '200':
+          description: 分流规则列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesResponse'
+
+  /rules/match:
+    post:
+      tags: [Rules]
+      summary: 模拟流量元数据在分流规则引擎中的匹配计算
+      operationId: matchRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleMatchRequest'
+      responses:
+        '200':
+          description: 匹配计算结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleMatchResponse'
+
   /flows:
     get:
       tags: [Flows]
@@ -185,6 +268,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProbeTestResponse'
+
+  /probe/stream:
+    get:
+      tags: [Probe]
+      summary: 获取实时流式并发测速 SSE 事件流
+      operationId: streamProbeSites
+      parameters:
+        - name: timeout_ms
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 3000
+          description: 单站点探测超时毫秒数
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 可选过滤站点分类
+      responses:
+        '200':
+          description: 逐站点返回的实时测速 SSE 事件流 (text/event-stream)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: JSON-formatted ProbeResultItem events
+
+  /tailscale/exit-nodes:
+    get:
+      tags: [Tailscale]
+      summary: 获取 Tailnet 中所有可供消费的远端 Exit Node 列表
+      operationId: getTailscaleExitNodes
+      responses:
+        '200':
+          description: 出口节点列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailscaleExitNodesResponse'
+    put:
+      tags: [Tailscale]
+      summary: 设置当前消费的远端 Exit Node（空字符串表示停用）
+      operationId: setTailscaleExitNode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetTailscaleExitNodeRequest'
+      responses:
+        '200':
+          description: 出口节点切换结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailscaleExitNodeResult'
+
+  /tailscale/magic-ip/pending:
+    get:
+      tags: [Tailscale]
+      summary: 获取当前待处理的 Magic-IP 冲突列表
+      operationId: getMagicIPPending
+      responses:
+        '200':
+          description: 冲突列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPPendingResponse'
+
+  /tailscale/magic-ip/choices:
+    get:
+      tags: [Tailscale]
+      summary: 获取用户已做出的 Magic-IP 路由裁决历史记录
+      operationId: getMagicIPChoices
+      responses:
+        '200':
+          description: 路由裁决记录列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPChoicesResponse'
+
+  /tailscale/magic-ip/decide:
+    post:
+      tags: [Tailscale]
+      summary: 提交特定冲突 IP 的设备归属裁决
+      operationId: decideMagicIP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicIPDecideRequest'
+      responses:
+        '200':
+          description: 裁决提交成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPDecideResponse'
+
+  /tailscale/magic-ip/choices/{ip}:
+    delete:
+      tags: [Tailscale]
+      summary: 撤销或清除指定 IP 的历史路由裁决
+      operationId: deleteMagicIPChoice
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 目标 IP 地址
+      responses:
+        '200':
+          description: 清除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicIPDeleteResponse'
 
   /observation/consents:
     get:
@@ -280,7 +486,7 @@ paths:
 
 components:
   schemas:
-    # ── 通用模型 ────────────────────────────────────────────────────────
+    # ── 通用与系统模型 ──────────────────────────────────────────────────
     ErrorResponse:
       type: object
       required:
@@ -391,6 +597,19 @@ components:
           type: string
           example: "ss-hk"
 
+    ConfigResponse:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: 生效的原始 YAML 配置内容
+        version:
+          type: string
+          nullable: true
+          description: 配置格式版本
+
     # ── 拓扑与路由模型 ──────────────────────────────────────────────────
     TopologyNode:
       type: object
@@ -488,6 +707,97 @@ components:
           type: string
         selected:
           type: string
+
+    GroupDelayRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          description: 自定义探测测试 URL
+          example: "http://cp.cloudflare.com/generate_204"
+        timeout_ms:
+          type: integer
+          format: int64
+          default: 3000
+          description: 测速超时毫秒
+
+    GroupDelayResponse:
+      type: object
+      required:
+        - group_id
+        - delays
+      properties:
+        group_id:
+          type: string
+        delays:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: 节点 ID 对应 RTT 延迟 (ms)
+
+    # ── 规则引擎模型 ────────────────────────────────────────────────────
+    RuleItem:
+      type: object
+      required:
+        - raw
+        - matcher
+        - target
+      properties:
+        raw:
+          type: string
+          example: "DOMAIN-SUFFIX,google.com,Global-Proxy"
+        matcher:
+          type: string
+          example: "DOMAIN-SUFFIX,google.com"
+        target:
+          type: string
+          example: "Global-Proxy"
+
+    RulesResponse:
+      type: object
+      required:
+        - total
+        - rules
+      properties:
+        total:
+          type: integer
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleItem'
+
+    RuleMatchRequest:
+      type: object
+      properties:
+        domain:
+          type: string
+          example: "google.com"
+        ip:
+          type: string
+          example: "142.250.190.46"
+        port:
+          type: integer
+          example: 443
+        protocol:
+          type: string
+          example: "TCP"
+
+    RuleMatchResponse:
+      type: object
+      required:
+        - matched
+      properties:
+        matched:
+          type: boolean
+        rule:
+          type: string
+          nullable: true
+          example: "DOMAIN-SUFFIX,google.com,Global-Proxy"
+        target:
+          type: string
+          nullable: true
+          example: "Global-Proxy"
 
     # ── 流量与网络流模型 ────────────────────────────────────────────────
     FlowRecord:
@@ -648,6 +958,145 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProbeResultItem'
+
+    # ── Tailscale 出口与 Magic-IP 模型 ──────────────────────────────────
+    TailscaleExitNodeItem:
+      type: object
+      required:
+        - id
+        - name
+        - ip
+        - online
+        - active
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        ip:
+          type: string
+        online:
+          type: boolean
+        active:
+          type: boolean
+        location:
+          type: string
+          nullable: true
+
+    TailscaleExitNodesResponse:
+      type: object
+      required:
+        - exit_nodes
+      properties:
+        exit_nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TailscaleExitNodeItem'
+
+    SetTailscaleExitNodeRequest:
+      type: object
+      required:
+        - node_id
+      properties:
+        node_id:
+          type: string
+          description: 目标出口节点 ID，空字符串表示关闭出口节点
+
+    TailscaleExitNodeResult:
+      type: object
+      required:
+        - active_node
+      properties:
+        active_node:
+          type: string
+          description: 当前生效激活的出口节点 ID
+
+    MagicIPCandidate:
+      type: object
+      required:
+        - ip
+        - device_name
+        - source
+      properties:
+        ip:
+          type: string
+        device_name:
+          type: string
+        source:
+          type: string
+
+    MagicIPConflictItem:
+      type: object
+      required:
+        - conflict_ip
+        - candidates
+      properties:
+        conflict_ip:
+          type: string
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagicIPCandidate'
+
+    MagicIPPendingResponse:
+      type: object
+      required:
+        - conflicts
+      properties:
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagicIPConflictItem'
+
+    MagicIPChoiceItem:
+      type: object
+      required:
+        - ip
+        - chosen_device
+      properties:
+        ip:
+          type: string
+        chosen_device:
+          type: string
+
+    MagicIPChoicesResponse:
+      type: object
+      required:
+        - choices
+      properties:
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagicIPChoiceItem'
+
+    MagicIPDecideRequest:
+      type: object
+      required:
+        - conflict_ip
+        - chosen_device
+      properties:
+        conflict_ip:
+          type: string
+        chosen_device:
+          type: string
+
+    MagicIPDecideResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: "decided"
+
+    MagicIPDeleteResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: "cleared"
 
     # ── 用量观测模型 ────────────────────────────────────────────────────
     ObservationConsentItem:
