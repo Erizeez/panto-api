@@ -351,6 +351,94 @@ paths:
               schema:
                 type: string
 
+  /observation/consents:
+    get:
+      summary: 获取全部节点的用量观测授权申请列表
+      operationId: getObservationConsents
+      responses:
+        '200':
+          description: 授权申请列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ObservationConsentItem'
+
+  /observation/consents/{id}/decide:
+    post:
+      summary: 用户提交对特定节点的用量观测授权决定 (Granted 或 Denied)
+      operationId: decideObservationConsent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 节点唯一 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObservationDecisionRequest'
+      responses:
+        '200':
+          description: 授权决策成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  node_id:
+                    type: string
+                  status:
+                    type: string
+        '404':
+          description: 节点不存在或未注册观测
+
+  /observation/consents/{id}:
+    delete:
+      summary: 撤销对特定节点的用量观测授权 (Revoked)
+      operationId: revokeObservationConsent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 节点唯一 ID
+      responses:
+        '200':
+          description: 撤销成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  node_id:
+                    type: string
+                  status:
+                    type: string
+        '404':
+          description: 节点不存在
+
+  /observation/status:
+    get:
+      summary: 获取观测推送引擎的运行时状态与历史推送结果
+      operationId: getObservationStatus
+      responses:
+        '200':
+          description: 观测引擎状态详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObservationStatusResponse'
+
 components:
   schemas:
     VersionResponse:
@@ -872,3 +960,93 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProbeResultItem'
+
+    ObservationConsentItem:
+      type: object
+      required:
+        - node_id
+        - url
+        - status
+        - requested_at_ms
+      properties:
+        node_id:
+          type: string
+          description: 节点唯一 ID
+        provider_name:
+          type: string
+          nullable: true
+          description: 次级提供商展示名称
+        url:
+          type: string
+          description: 推送用量接收端 URL
+        status:
+          type: string
+          enum:
+            - pending
+            - granted
+            - denied
+            - revoked
+          description: 授权状态
+        requested_at_ms:
+          type: integer
+          format: int64
+          description: 申请发起毫秒时间戳
+        decided_at_ms:
+          type: integer
+          format: int64
+          nullable: true
+          description: 用户决策毫秒时间戳
+
+    ObservationDecisionRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - granted
+            - denied
+          description: 授权决定
+
+    PushResultItem:
+      type: object
+      required:
+        - last_pushed_at_ms
+        - success
+        - upload_bytes
+        - download_bytes
+      properties:
+        last_pushed_at_ms:
+          type: integer
+          format: int64
+        success:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        upload_bytes:
+          type: integer
+          format: int64
+        download_bytes:
+          type: integer
+          format: int64
+
+    ObservationStatusResponse:
+      type: object
+      required:
+        - running
+        - active_nodes
+        - pending_nodes
+        - last_push_results
+      properties:
+        running:
+          type: boolean
+        active_nodes:
+          type: integer
+        pending_nodes:
+          type: integer
+        last_push_results:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/PushResultItem'
