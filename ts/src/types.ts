@@ -1,175 +1,98 @@
 /**
  * TypeScript definitions for Panto Control API.
- * Generated from OpenAPI 3.0.3 specification.
+ * Single source of truth corresponding to OpenAPI 3.0.3 specification.
  */
+
+export interface ErrorResponse {
+  error: string;
+}
 
 export interface VersionResponse {
   version: string;
-  os: string;
-  arch: string;
+  git_commit: string;
+  build_time: string;
   compiler: string;
+}
+
+export interface TrafficStats {
+  upload_total: number;
+  download_total: number;
+  upload_rate_bps?: number;
+  download_rate_bps?: number;
 }
 
 export interface StatusResponse {
   running: boolean;
+  mode: 'rule' | 'global' | 'direct' | string;
+  global_exit: string;
   uptime_seconds: number;
-  mixed_port: number;
-  assigned_ip?: string;
-  mode?: 'rule' | 'direct' | 'global' | string;
-  global_target?: string;
-  active_endpoints: number;
-  active_groups: number;
-  active_rules: number;
+  connections_count: number;
+  traffic: TrafficStats;
 }
 
 export interface ModeResponse {
-  mode: 'rule' | 'direct' | 'global' | string;
-  global_target: string;
+  mode: 'rule' | 'global' | 'direct' | string;
+  global_exit: string;
 }
 
 export interface SetModeRequest {
-  mode: 'rule' | 'direct' | 'global' | string;
-  global_target?: string;
-}
-
-export interface TailscaleExitNodeItem {
-  id: string;
-  name: string;
-  ip: string;
-  online: boolean;
-  active: boolean;
-  location?: string;
-}
-
-export interface TailscaleExitNodesResponse {
-  exit_nodes: TailscaleExitNodeItem[];
-}
-
-export interface SetTailscaleExitNodeRequest {
-  node_id: string;
-}
-
-export interface TailscaleExitNodeResult {
-  active_node: string;
-}
-
-export interface MagicIPCandidate {
-  ip: string;
-  device_name: string;
-  source: string;
-}
-
-export interface MagicIPConflictItem {
-  conflict_ip: string;
-  candidates: MagicIPCandidate[];
-}
-
-export interface MagicIPPendingResponse {
-  conflicts: MagicIPConflictItem[];
-}
-
-export interface MagicIPChoiceItem {
-  ip: string;
-  chosen_device: string;
-}
-
-export interface MagicIPChoicesResponse {
-  choices: MagicIPChoiceItem[];
-}
-
-export interface MagicIPDecideRequest {
-  conflict_ip: string;
-  chosen_device: string;
-}
-
-export interface MagicIPDecideResponse {
-  status: string;
-}
-
-export interface MagicIPDeleteResponse {
-  status: string;
+  mode: 'rule' | 'global' | 'direct' | string;
+  global_exit?: string;
 }
 
 export interface TopologyNode {
   id: string;
   kind: string;
-  underlay?: string;
+  underlay?: string | null;
   effective_mtu: number;
   overhead: number;
-  dependents?: string[];
+  dependents: string[];
   path: string[];
 }
 
-export interface TopologyResponse {
-  nodes: TopologyNode[];
+export interface TopologyGraph {
+  nodes: Record<string, TopologyNode>;
+  root: string;
 }
 
 export interface GroupItem {
   id: string;
-  kind: 'select' | 'url-test' | 'fallback' | 'load-balance' | string;
+  kind: string;
   members: string[];
-  current?: string;
-  delays?: Record<string, number>;
+  selected?: string | null;
 }
 
 export interface GroupsResponse {
   groups: GroupItem[];
 }
 
-export interface SelectMemberRequest {
+export interface SelectGroupRequest {
   selected: string;
 }
 
-export interface SelectMemberResponse {
+export interface SelectGroupResponse {
+  success: boolean;
+  group_id: string;
+  selected: string;
+}
+
+export interface FlowRecord {
   id: string;
-  current: string;
-}
-
-export interface DelayTestRequest {
-  url?: string;
-  timeout_ms?: number;
-}
-
-export interface DelayTestResponse {
-  delays: Record<string, number>;
-}
-
-export interface RuleItem {
-  id: number;
-  type: string;
-  payload: string;
+  proto: string;
+  src: string;
+  dst: string;
   target: string;
+  rule?: string | null;
+  created_at_ms: number;
+  last_active_at_ms: number;
+  upload_bytes: number;
+  download_bytes: number;
+  packets: number;
 }
 
-export interface RulesResponse {
-  rules: RuleItem[];
-}
-
-export interface RuleMatchRequest {
-  host: string;
-  port?: number;
-}
-
-export interface RuleMatchResponse {
-  matched: boolean;
-  rule_target: string;
-  selected_endpoint: string;
-  chain: string[];
-}
-
-export interface TrafficResponse {
-  up_bytes: number;
-  down_bytes: number;
-  up_rate_bps: number;
-  down_rate_bps: number;
-}
-
-export interface ConfigResponse {
-  content: string;
-}
-
-export interface ErrorResponse {
-  error: string;
+export interface FlowsResponse {
+  total: number;
+  flows: FlowRecord[];
 }
 
 export interface ProbeSite {
@@ -188,20 +111,62 @@ export interface ProbeSitesResponse {
 
 export interface ProbeTestRequest {
   site_id?: string;
+  category?: string;
   timeout_ms?: number;
+  proxy_addr?: string;
 }
+
+export type ProbeStatus = 'ok' | 'timeout' | 'error' | 'blocked';
 
 export interface ProbeResultItem {
   id: string;
+  name: string;
   domain: string;
-  rule_target: string;
-  selected_endpoint: string;
-  chain: string[];
+  category: string;
   latency_ms: number;
-  status: string;
-  error?: string;
+  status: ProbeStatus;
+  error?: string | null;
 }
 
 export interface ProbeTestResponse {
+  total: number;
+  reachable: number;
+  failed: number;
   results: ProbeResultItem[];
+}
+
+export type ConsentStatus = 'pending' | 'granted' | 'denied' | 'revoked';
+
+export interface ObservationConsentItem {
+  node_id: string;
+  provider_name?: string | null;
+  url: string;
+  status: ConsentStatus;
+  requested_at_ms: number;
+  decided_at_ms?: number | null;
+}
+
+export interface DecideConsentRequest {
+  status: 'granted' | 'denied';
+}
+
+export interface DecideConsentResponse {
+  success: boolean;
+  node_id: string;
+  status: string;
+}
+
+export interface PushResultRecord {
+  last_pushed_at_ms: number;
+  success: boolean;
+  message?: string | null;
+  upload_bytes: number;
+  download_bytes: number;
+}
+
+export interface ObservationStatusResponse {
+  running: boolean;
+  active_nodes: number;
+  pending_nodes: number;
+  last_push_results: Record<string, PushResultRecord>;
 }

@@ -1,6 +1,13 @@
-.PHONY: all test test-go test-ts test-rust build clean
+.PHONY: all generate generate-go test test-go test-ts test-rust build clean
 
-all: test
+all: generate build test
+
+generate: generate-go
+
+generate-go:
+	@echo "==> Generating Go SDK from openapi.yaml"
+	go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.1 -package pantoapi -generate types -o go/types.gen.go openapi.yaml
+	go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.1 -package pantoapi -generate client -o go/client.gen.go openapi.yaml
 
 test: test-go test-ts test-rust
 

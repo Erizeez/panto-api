@@ -89,19 +89,11 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetConfig request
-	GetConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetFlows request
+	GetFlows(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetGroups request
 	GetGroups(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetGroup request
-	GetGroup(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// TestGroupDelayWithBody request with any body
-	TestGroupDelayWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	TestGroupDelay(ctx context.Context, id string, body TestGroupDelayJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SelectGroupMemberWithBody request with any body
 	SelectGroupMemberWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -116,62 +108,40 @@ type ClientInterface interface {
 
 	SetMode(ctx context.Context, body SetModeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetObservationConsents request
+	GetObservationConsents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeObservationConsent request
+	RevokeObservationConsent(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DecideObservationConsentWithBody request with any body
+	DecideObservationConsentWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DecideObservationConsent(ctx context.Context, id string, body DecideObservationConsentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetObservationStatus request
+	GetObservationStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetProbeSites request
 	GetProbeSites(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// StreamProbeSites request
-	StreamProbeSites(ctx context.Context, params *StreamProbeSitesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// TestProbeSitesWithBody request with any body
 	TestProbeSitesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	TestProbeSites(ctx context.Context, body TestProbeSitesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetRules request
-	GetRules(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// MatchRuleWithBody request with any body
-	MatchRuleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	MatchRule(ctx context.Context, body MatchRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetStatus request
 	GetStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetTailscaleExitNodes request
-	GetTailscaleExitNodes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SetTailscaleExitNodeWithBody request with any body
-	SetTailscaleExitNodeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	SetTailscaleExitNode(ctx context.Context, body SetTailscaleExitNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetMagicIPChoices request
-	GetMagicIPChoices(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteMagicIPChoice request
-	DeleteMagicIPChoice(ctx context.Context, ip string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DecideMagicIPWithBody request with any body
-	DecideMagicIPWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	DecideMagicIP(ctx context.Context, body DecideMagicIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetMagicIPPending request
-	GetMagicIPPending(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetTopology request
 	GetTopology(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetTraffic request
-	GetTraffic(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetConfigRequest(c.Server)
+func (c *Client) GetFlows(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFlowsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -184,42 +154,6 @@ func (c *Client) GetConfig(ctx context.Context, reqEditors ...RequestEditorFn) (
 
 func (c *Client) GetGroups(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetGroupsRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetGroup(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetGroupRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) TestGroupDelayWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTestGroupDelayRequestWithBody(c.Server, id, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) TestGroupDelay(ctx context.Context, id string, body TestGroupDelayJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTestGroupDelayRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -290,8 +224,8 @@ func (c *Client) SetMode(ctx context.Context, body SetModeJSONRequestBody, reqEd
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetProbeSites(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetProbeSitesRequest(c.Server)
+func (c *Client) GetObservationConsents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetObservationConsentsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -302,8 +236,56 @@ func (c *Client) GetProbeSites(ctx context.Context, reqEditors ...RequestEditorF
 	return c.Client.Do(req)
 }
 
-func (c *Client) StreamProbeSites(ctx context.Context, params *StreamProbeSitesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewStreamProbeSitesRequest(c.Server, params)
+func (c *Client) RevokeObservationConsent(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeObservationConsentRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DecideObservationConsentWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDecideObservationConsentRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DecideObservationConsent(ctx context.Context, id string, body DecideObservationConsentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDecideObservationConsentRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetObservationStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetObservationStatusRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetProbeSites(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetProbeSitesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -338,140 +320,8 @@ func (c *Client) TestProbeSites(ctx context.Context, body TestProbeSitesJSONRequ
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRules(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRulesRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) MatchRuleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewMatchRuleRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) MatchRule(ctx context.Context, body MatchRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewMatchRuleRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) GetStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetStatusRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetTailscaleExitNodes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTailscaleExitNodesRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) SetTailscaleExitNodeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetTailscaleExitNodeRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) SetTailscaleExitNode(ctx context.Context, body SetTailscaleExitNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetTailscaleExitNodeRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetMagicIPChoices(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMagicIPChoicesRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteMagicIPChoice(ctx context.Context, ip string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteMagicIPChoiceRequest(c.Server, ip)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DecideMagicIPWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDecideMagicIPRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DecideMagicIP(ctx context.Context, body DecideMagicIPJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDecideMagicIPRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetMagicIPPending(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMagicIPPendingRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -494,18 +344,6 @@ func (c *Client) GetTopology(ctx context.Context, reqEditors ...RequestEditorFn)
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetTraffic(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTrafficRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetVersionRequest(c.Server)
 	if err != nil {
@@ -518,8 +356,8 @@ func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) 
 	return c.Client.Do(req)
 }
 
-// NewGetConfigRequest generates requests for GetConfig
-func NewGetConfigRequest(server string) (*http.Request, error) {
+// NewGetFlowsRequest generates requests for GetFlows
+func NewGetFlowsRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -527,7 +365,7 @@ func NewGetConfigRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/config")
+	operationPath := fmt.Sprintf("/flows")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -568,87 +406,6 @@ func NewGetGroupsRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return req, nil
-}
-
-// NewGetGroupRequest generates requests for GetGroup
-func NewGetGroupRequest(server string, id string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/groups/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewTestGroupDelayRequest calls the generic TestGroupDelay builder with application/json body
-func NewTestGroupDelayRequest(server string, id string, body TestGroupDelayJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewTestGroupDelayRequestWithBody(server, id, "application/json", bodyReader)
-}
-
-// NewTestGroupDelayRequestWithBody generates requests for TestGroupDelay with any type of body
-func NewTestGroupDelayRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/groups/%s/delay", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -767,8 +524,8 @@ func NewSetModeRequestWithBody(server string, contentType string, body io.Reader
 	return req, nil
 }
 
-// NewGetProbeSitesRequest generates requests for GetProbeSites
-func NewGetProbeSitesRequest(server string) (*http.Request, error) {
+// NewGetObservationConsentsRequest generates requests for GetObservationConsents
+func NewGetObservationConsentsRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -776,7 +533,7 @@ func NewGetProbeSitesRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/probe/sites")
+	operationPath := fmt.Sprintf("/observation/consents")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -794,16 +551,23 @@ func NewGetProbeSitesRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewStreamProbeSitesRequest generates requests for StreamProbeSites
-func NewStreamProbeSitesRequest(server string, params *StreamProbeSitesParams) (*http.Request, error) {
+// NewRevokeObservationConsentRequest generates requests for RevokeObservationConsent
+func NewRevokeObservationConsentRequest(server string, id string) (*http.Request, error) {
 	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/probe/stream")
+	operationPath := fmt.Sprintf("/observation/consents/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -813,26 +577,105 @@ func NewStreamProbeSitesRequest(server string, params *StreamProbeSitesParams) (
 		return nil, err
 	}
 
-	if params != nil {
-		queryValues := queryURL.Query()
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
-		if params.TimeoutMs != nil {
+	return req, nil
+}
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "timeout_ms", runtime.ParamLocationQuery, *params.TimeoutMs); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
+// NewDecideObservationConsentRequest calls the generic DecideObservationConsent builder with application/json body
+func NewDecideObservationConsentRequest(server string, id string, body DecideObservationConsentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDecideObservationConsentRequestWithBody(server, id, "application/json", bodyReader)
+}
 
-		}
+// NewDecideObservationConsentRequestWithBody generates requests for DecideObservationConsent with any type of body
+func NewDecideObservationConsentRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
 
-		queryURL.RawQuery = queryValues.Encode()
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/observation/consents/%s/decide", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetObservationStatusRequest generates requests for GetObservationStatus
+func NewGetObservationStatusRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/observation/status")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetProbeSitesRequest generates requests for GetProbeSites
+func NewGetProbeSitesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/probe/sites")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -883,73 +726,6 @@ func NewTestProbeSitesRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
-// NewGetRulesRequest generates requests for GetRules
-func NewGetRulesRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/rules")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewMatchRuleRequest calls the generic MatchRule builder with application/json body
-func NewMatchRuleRequest(server string, body MatchRuleJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewMatchRuleRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewMatchRuleRequestWithBody generates requests for MatchRule with any type of body
-func NewMatchRuleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/rules/match")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewGetStatusRequest generates requests for GetStatus
 func NewGetStatusRequest(server string) (*http.Request, error) {
 	var err error
@@ -977,201 +753,6 @@ func NewGetStatusRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewGetTailscaleExitNodesRequest generates requests for GetTailscaleExitNodes
-func NewGetTailscaleExitNodesRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/tailscale/exit-nodes")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewSetTailscaleExitNodeRequest calls the generic SetTailscaleExitNode builder with application/json body
-func NewSetTailscaleExitNodeRequest(server string, body SetTailscaleExitNodeJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewSetTailscaleExitNodeRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewSetTailscaleExitNodeRequestWithBody generates requests for SetTailscaleExitNode with any type of body
-func NewSetTailscaleExitNodeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/tailscale/exit-nodes")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetMagicIPChoicesRequest generates requests for GetMagicIPChoices
-func NewGetMagicIPChoicesRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/tailscale/magic-ip/choices")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewDeleteMagicIPChoiceRequest generates requests for DeleteMagicIPChoice
-func NewDeleteMagicIPChoiceRequest(server string, ip string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "ip", runtime.ParamLocationPath, ip)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/tailscale/magic-ip/choices/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewDecideMagicIPRequest calls the generic DecideMagicIP builder with application/json body
-func NewDecideMagicIPRequest(server string, body DecideMagicIPJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewDecideMagicIPRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewDecideMagicIPRequestWithBody generates requests for DecideMagicIP with any type of body
-func NewDecideMagicIPRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/tailscale/magic-ip/decide")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetMagicIPPendingRequest generates requests for GetMagicIPPending
-func NewGetMagicIPPendingRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/tailscale/magic-ip/pending")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewGetTopologyRequest generates requests for GetTopology
 func NewGetTopologyRequest(server string) (*http.Request, error) {
 	var err error
@@ -1182,33 +763,6 @@ func NewGetTopologyRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/topology")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetTrafficRequest generates requests for GetTraffic
-func NewGetTrafficRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/traffic")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1296,19 +850,11 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetConfigWithResponse request
-	GetConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetConfigResponse, error)
+	// GetFlowsWithResponse request
+	GetFlowsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetFlowsResponse, error)
 
 	// GetGroupsWithResponse request
 	GetGroupsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetGroupsResponse, error)
-
-	// GetGroupWithResponse request
-	GetGroupWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetGroupResponse, error)
-
-	// TestGroupDelayWithBodyWithResponse request with any body
-	TestGroupDelayWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestGroupDelayResponse, error)
-
-	TestGroupDelayWithResponse(ctx context.Context, id string, body TestGroupDelayJSONRequestBody, reqEditors ...RequestEditorFn) (*TestGroupDelayResponse, error)
 
 	// SelectGroupMemberWithBodyWithResponse request with any body
 	SelectGroupMemberWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SelectGroupMemberResponse, error)
@@ -1323,68 +869,46 @@ type ClientWithResponsesInterface interface {
 
 	SetModeWithResponse(ctx context.Context, body SetModeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetModeResponse, error)
 
+	// GetObservationConsentsWithResponse request
+	GetObservationConsentsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetObservationConsentsResponse, error)
+
+	// RevokeObservationConsentWithResponse request
+	RevokeObservationConsentWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*RevokeObservationConsentResponse, error)
+
+	// DecideObservationConsentWithBodyWithResponse request with any body
+	DecideObservationConsentWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DecideObservationConsentResponse, error)
+
+	DecideObservationConsentWithResponse(ctx context.Context, id string, body DecideObservationConsentJSONRequestBody, reqEditors ...RequestEditorFn) (*DecideObservationConsentResponse, error)
+
+	// GetObservationStatusWithResponse request
+	GetObservationStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetObservationStatusResponse, error)
+
 	// GetProbeSitesWithResponse request
 	GetProbeSitesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetProbeSitesResponse, error)
-
-	// StreamProbeSitesWithResponse request
-	StreamProbeSitesWithResponse(ctx context.Context, params *StreamProbeSitesParams, reqEditors ...RequestEditorFn) (*StreamProbeSitesResponse, error)
 
 	// TestProbeSitesWithBodyWithResponse request with any body
 	TestProbeSitesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestProbeSitesResponse, error)
 
 	TestProbeSitesWithResponse(ctx context.Context, body TestProbeSitesJSONRequestBody, reqEditors ...RequestEditorFn) (*TestProbeSitesResponse, error)
 
-	// GetRulesWithResponse request
-	GetRulesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRulesResponse, error)
-
-	// MatchRuleWithBodyWithResponse request with any body
-	MatchRuleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MatchRuleResponse, error)
-
-	MatchRuleWithResponse(ctx context.Context, body MatchRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*MatchRuleResponse, error)
-
 	// GetStatusWithResponse request
 	GetStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetStatusResponse, error)
 
-	// GetTailscaleExitNodesWithResponse request
-	GetTailscaleExitNodesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetTailscaleExitNodesResponse, error)
-
-	// SetTailscaleExitNodeWithBodyWithResponse request with any body
-	SetTailscaleExitNodeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetTailscaleExitNodeResponse, error)
-
-	SetTailscaleExitNodeWithResponse(ctx context.Context, body SetTailscaleExitNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetTailscaleExitNodeResponse, error)
-
-	// GetMagicIPChoicesWithResponse request
-	GetMagicIPChoicesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMagicIPChoicesResponse, error)
-
-	// DeleteMagicIPChoiceWithResponse request
-	DeleteMagicIPChoiceWithResponse(ctx context.Context, ip string, reqEditors ...RequestEditorFn) (*DeleteMagicIPChoiceResponse, error)
-
-	// DecideMagicIPWithBodyWithResponse request with any body
-	DecideMagicIPWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DecideMagicIPResponse, error)
-
-	DecideMagicIPWithResponse(ctx context.Context, body DecideMagicIPJSONRequestBody, reqEditors ...RequestEditorFn) (*DecideMagicIPResponse, error)
-
-	// GetMagicIPPendingWithResponse request
-	GetMagicIPPendingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMagicIPPendingResponse, error)
-
 	// GetTopologyWithResponse request
 	GetTopologyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetTopologyResponse, error)
-
-	// GetTrafficWithResponse request
-	GetTrafficWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetTrafficResponse, error)
 
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
 }
 
-type GetConfigResponse struct {
+type GetFlowsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ConfigResponse
+	JSON200      *FlowsResponse
 }
 
 // Status returns HTTPResponse.Status
-func (r GetConfigResponse) Status() string {
+func (r GetFlowsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1392,7 +916,7 @@ func (r GetConfigResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetConfigResponse) StatusCode() int {
+func (r GetFlowsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1421,56 +945,11 @@ func (r GetGroupsResponse) StatusCode() int {
 	return 0
 }
 
-type GetGroupResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *GroupItem
-	JSON404      *ErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetGroupResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetGroupResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type TestGroupDelayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *DelayTestResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r TestGroupDelayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r TestGroupDelayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type SelectGroupMemberResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *SelectMemberResponse
-	JSON400      *ErrorResponse
+	JSON200      *SelectGroupResponse
+	JSON404      *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -1533,6 +1012,97 @@ func (r SetModeResponse) StatusCode() int {
 	return 0
 }
 
+type GetObservationConsentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ObservationConsentItem
+}
+
+// Status returns HTTPResponse.Status
+func (r GetObservationConsentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetObservationConsentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RevokeObservationConsentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DecideConsentResponse
+	JSON404      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeObservationConsentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeObservationConsentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DecideObservationConsentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DecideConsentResponse
+	JSON400      *ErrorResponse
+	JSON404      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DecideObservationConsentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DecideObservationConsentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetObservationStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ObservationStatusResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetObservationStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetObservationStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetProbeSitesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1549,27 +1119,6 @@ func (r GetProbeSitesResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetProbeSitesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type StreamProbeSitesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r StreamProbeSitesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r StreamProbeSitesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1598,50 +1147,6 @@ func (r TestProbeSitesResponse) StatusCode() int {
 	return 0
 }
 
-type GetRulesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *RulesResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetRulesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetRulesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type MatchRuleResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *RuleMatchResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r MatchRuleResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r MatchRuleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type GetStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1664,142 +1169,10 @@ func (r GetStatusResponse) StatusCode() int {
 	return 0
 }
 
-type GetTailscaleExitNodesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *TailscaleExitNodesResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetTailscaleExitNodesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetTailscaleExitNodesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type SetTailscaleExitNodeResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *TailscaleExitNodeResult
-}
-
-// Status returns HTTPResponse.Status
-func (r SetTailscaleExitNodeResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r SetTailscaleExitNodeResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetMagicIPChoicesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *MagicIPChoicesResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMagicIPChoicesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMagicIPChoicesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteMagicIPChoiceResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *MagicIPDeleteResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteMagicIPChoiceResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteMagicIPChoiceResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DecideMagicIPResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *MagicIPDecideResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r DecideMagicIPResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DecideMagicIPResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetMagicIPPendingResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *MagicIPPendingResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMagicIPPendingResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMagicIPPendingResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type GetTopologyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *TopologyResponse
+	JSON200      *TopologyGraph
 }
 
 // Status returns HTTPResponse.Status
@@ -1812,28 +1185,6 @@ func (r GetTopologyResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetTopologyResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetTrafficResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *TrafficResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r GetTrafficResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetTrafficResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1862,13 +1213,13 @@ func (r GetVersionResponse) StatusCode() int {
 	return 0
 }
 
-// GetConfigWithResponse request returning *GetConfigResponse
-func (c *ClientWithResponses) GetConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetConfigResponse, error) {
-	rsp, err := c.GetConfig(ctx, reqEditors...)
+// GetFlowsWithResponse request returning *GetFlowsResponse
+func (c *ClientWithResponses) GetFlowsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetFlowsResponse, error) {
+	rsp, err := c.GetFlows(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetConfigResponse(rsp)
+	return ParseGetFlowsResponse(rsp)
 }
 
 // GetGroupsWithResponse request returning *GetGroupsResponse
@@ -1878,32 +1229,6 @@ func (c *ClientWithResponses) GetGroupsWithResponse(ctx context.Context, reqEdit
 		return nil, err
 	}
 	return ParseGetGroupsResponse(rsp)
-}
-
-// GetGroupWithResponse request returning *GetGroupResponse
-func (c *ClientWithResponses) GetGroupWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetGroupResponse, error) {
-	rsp, err := c.GetGroup(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetGroupResponse(rsp)
-}
-
-// TestGroupDelayWithBodyWithResponse request with arbitrary body returning *TestGroupDelayResponse
-func (c *ClientWithResponses) TestGroupDelayWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestGroupDelayResponse, error) {
-	rsp, err := c.TestGroupDelayWithBody(ctx, id, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseTestGroupDelayResponse(rsp)
-}
-
-func (c *ClientWithResponses) TestGroupDelayWithResponse(ctx context.Context, id string, body TestGroupDelayJSONRequestBody, reqEditors ...RequestEditorFn) (*TestGroupDelayResponse, error) {
-	rsp, err := c.TestGroupDelay(ctx, id, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseTestGroupDelayResponse(rsp)
 }
 
 // SelectGroupMemberWithBodyWithResponse request with arbitrary body returning *SelectGroupMemberResponse
@@ -1949,6 +1274,50 @@ func (c *ClientWithResponses) SetModeWithResponse(ctx context.Context, body SetM
 	return ParseSetModeResponse(rsp)
 }
 
+// GetObservationConsentsWithResponse request returning *GetObservationConsentsResponse
+func (c *ClientWithResponses) GetObservationConsentsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetObservationConsentsResponse, error) {
+	rsp, err := c.GetObservationConsents(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetObservationConsentsResponse(rsp)
+}
+
+// RevokeObservationConsentWithResponse request returning *RevokeObservationConsentResponse
+func (c *ClientWithResponses) RevokeObservationConsentWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*RevokeObservationConsentResponse, error) {
+	rsp, err := c.RevokeObservationConsent(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeObservationConsentResponse(rsp)
+}
+
+// DecideObservationConsentWithBodyWithResponse request with arbitrary body returning *DecideObservationConsentResponse
+func (c *ClientWithResponses) DecideObservationConsentWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DecideObservationConsentResponse, error) {
+	rsp, err := c.DecideObservationConsentWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDecideObservationConsentResponse(rsp)
+}
+
+func (c *ClientWithResponses) DecideObservationConsentWithResponse(ctx context.Context, id string, body DecideObservationConsentJSONRequestBody, reqEditors ...RequestEditorFn) (*DecideObservationConsentResponse, error) {
+	rsp, err := c.DecideObservationConsent(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDecideObservationConsentResponse(rsp)
+}
+
+// GetObservationStatusWithResponse request returning *GetObservationStatusResponse
+func (c *ClientWithResponses) GetObservationStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetObservationStatusResponse, error) {
+	rsp, err := c.GetObservationStatus(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetObservationStatusResponse(rsp)
+}
+
 // GetProbeSitesWithResponse request returning *GetProbeSitesResponse
 func (c *ClientWithResponses) GetProbeSitesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetProbeSitesResponse, error) {
 	rsp, err := c.GetProbeSites(ctx, reqEditors...)
@@ -1956,15 +1325,6 @@ func (c *ClientWithResponses) GetProbeSitesWithResponse(ctx context.Context, req
 		return nil, err
 	}
 	return ParseGetProbeSitesResponse(rsp)
-}
-
-// StreamProbeSitesWithResponse request returning *StreamProbeSitesResponse
-func (c *ClientWithResponses) StreamProbeSitesWithResponse(ctx context.Context, params *StreamProbeSitesParams, reqEditors ...RequestEditorFn) (*StreamProbeSitesResponse, error) {
-	rsp, err := c.StreamProbeSites(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseStreamProbeSitesResponse(rsp)
 }
 
 // TestProbeSitesWithBodyWithResponse request with arbitrary body returning *TestProbeSitesResponse
@@ -1984,32 +1344,6 @@ func (c *ClientWithResponses) TestProbeSitesWithResponse(ctx context.Context, bo
 	return ParseTestProbeSitesResponse(rsp)
 }
 
-// GetRulesWithResponse request returning *GetRulesResponse
-func (c *ClientWithResponses) GetRulesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetRulesResponse, error) {
-	rsp, err := c.GetRules(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetRulesResponse(rsp)
-}
-
-// MatchRuleWithBodyWithResponse request with arbitrary body returning *MatchRuleResponse
-func (c *ClientWithResponses) MatchRuleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MatchRuleResponse, error) {
-	rsp, err := c.MatchRuleWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseMatchRuleResponse(rsp)
-}
-
-func (c *ClientWithResponses) MatchRuleWithResponse(ctx context.Context, body MatchRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*MatchRuleResponse, error) {
-	rsp, err := c.MatchRule(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseMatchRuleResponse(rsp)
-}
-
 // GetStatusWithResponse request returning *GetStatusResponse
 func (c *ClientWithResponses) GetStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetStatusResponse, error) {
 	rsp, err := c.GetStatus(ctx, reqEditors...)
@@ -2017,76 +1351,6 @@ func (c *ClientWithResponses) GetStatusWithResponse(ctx context.Context, reqEdit
 		return nil, err
 	}
 	return ParseGetStatusResponse(rsp)
-}
-
-// GetTailscaleExitNodesWithResponse request returning *GetTailscaleExitNodesResponse
-func (c *ClientWithResponses) GetTailscaleExitNodesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetTailscaleExitNodesResponse, error) {
-	rsp, err := c.GetTailscaleExitNodes(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetTailscaleExitNodesResponse(rsp)
-}
-
-// SetTailscaleExitNodeWithBodyWithResponse request with arbitrary body returning *SetTailscaleExitNodeResponse
-func (c *ClientWithResponses) SetTailscaleExitNodeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetTailscaleExitNodeResponse, error) {
-	rsp, err := c.SetTailscaleExitNodeWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetTailscaleExitNodeResponse(rsp)
-}
-
-func (c *ClientWithResponses) SetTailscaleExitNodeWithResponse(ctx context.Context, body SetTailscaleExitNodeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetTailscaleExitNodeResponse, error) {
-	rsp, err := c.SetTailscaleExitNode(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetTailscaleExitNodeResponse(rsp)
-}
-
-// GetMagicIPChoicesWithResponse request returning *GetMagicIPChoicesResponse
-func (c *ClientWithResponses) GetMagicIPChoicesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMagicIPChoicesResponse, error) {
-	rsp, err := c.GetMagicIPChoices(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetMagicIPChoicesResponse(rsp)
-}
-
-// DeleteMagicIPChoiceWithResponse request returning *DeleteMagicIPChoiceResponse
-func (c *ClientWithResponses) DeleteMagicIPChoiceWithResponse(ctx context.Context, ip string, reqEditors ...RequestEditorFn) (*DeleteMagicIPChoiceResponse, error) {
-	rsp, err := c.DeleteMagicIPChoice(ctx, ip, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteMagicIPChoiceResponse(rsp)
-}
-
-// DecideMagicIPWithBodyWithResponse request with arbitrary body returning *DecideMagicIPResponse
-func (c *ClientWithResponses) DecideMagicIPWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DecideMagicIPResponse, error) {
-	rsp, err := c.DecideMagicIPWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDecideMagicIPResponse(rsp)
-}
-
-func (c *ClientWithResponses) DecideMagicIPWithResponse(ctx context.Context, body DecideMagicIPJSONRequestBody, reqEditors ...RequestEditorFn) (*DecideMagicIPResponse, error) {
-	rsp, err := c.DecideMagicIP(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDecideMagicIPResponse(rsp)
-}
-
-// GetMagicIPPendingWithResponse request returning *GetMagicIPPendingResponse
-func (c *ClientWithResponses) GetMagicIPPendingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMagicIPPendingResponse, error) {
-	rsp, err := c.GetMagicIPPending(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetMagicIPPendingResponse(rsp)
 }
 
 // GetTopologyWithResponse request returning *GetTopologyResponse
@@ -2098,15 +1362,6 @@ func (c *ClientWithResponses) GetTopologyWithResponse(ctx context.Context, reqEd
 	return ParseGetTopologyResponse(rsp)
 }
 
-// GetTrafficWithResponse request returning *GetTrafficResponse
-func (c *ClientWithResponses) GetTrafficWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetTrafficResponse, error) {
-	rsp, err := c.GetTraffic(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetTrafficResponse(rsp)
-}
-
 // GetVersionWithResponse request returning *GetVersionResponse
 func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error) {
 	rsp, err := c.GetVersion(ctx, reqEditors...)
@@ -2116,22 +1371,22 @@ func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEdi
 	return ParseGetVersionResponse(rsp)
 }
 
-// ParseGetConfigResponse parses an HTTP response from a GetConfigWithResponse call
-func ParseGetConfigResponse(rsp *http.Response) (*GetConfigResponse, error) {
+// ParseGetFlowsResponse parses an HTTP response from a GetFlowsWithResponse call
+func ParseGetFlowsResponse(rsp *http.Response) (*GetFlowsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetConfigResponse{
+	response := &GetFlowsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ConfigResponse
+		var dest FlowsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2168,65 +1423,6 @@ func ParseGetGroupsResponse(rsp *http.Response) (*GetGroupsResponse, error) {
 	return response, nil
 }
 
-// ParseGetGroupResponse parses an HTTP response from a GetGroupWithResponse call
-func ParseGetGroupResponse(rsp *http.Response) (*GetGroupResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetGroupResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest GroupItem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest ErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseTestGroupDelayResponse parses an HTTP response from a TestGroupDelayWithResponse call
-func ParseTestGroupDelayResponse(rsp *http.Response) (*TestGroupDelayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &TestGroupDelayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest DelayTestResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseSelectGroupMemberResponse parses an HTTP response from a SelectGroupMemberWithResponse call
 func ParseSelectGroupMemberResponse(rsp *http.Response) (*SelectGroupMemberResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2242,18 +1438,18 @@ func ParseSelectGroupMemberResponse(rsp *http.Response) (*SelectGroupMemberRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest SelectMemberResponse
+		var dest SelectGroupResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSON404 = &dest
 
 	}
 
@@ -2312,6 +1508,131 @@ func ParseSetModeResponse(rsp *http.Response) (*SetModeResponse, error) {
 	return response, nil
 }
 
+// ParseGetObservationConsentsResponse parses an HTTP response from a GetObservationConsentsWithResponse call
+func ParseGetObservationConsentsResponse(rsp *http.Response) (*GetObservationConsentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetObservationConsentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ObservationConsentItem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRevokeObservationConsentResponse parses an HTTP response from a RevokeObservationConsentWithResponse call
+func ParseRevokeObservationConsentResponse(rsp *http.Response) (*RevokeObservationConsentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeObservationConsentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecideConsentResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDecideObservationConsentResponse parses an HTTP response from a DecideObservationConsentWithResponse call
+func ParseDecideObservationConsentResponse(rsp *http.Response) (*DecideObservationConsentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DecideObservationConsentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecideConsentResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetObservationStatusResponse parses an HTTP response from a GetObservationStatusWithResponse call
+func ParseGetObservationStatusResponse(rsp *http.Response) (*GetObservationStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetObservationStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ObservationStatusResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetProbeSitesResponse parses an HTTP response from a GetProbeSitesWithResponse call
 func ParseGetProbeSitesResponse(rsp *http.Response) (*GetProbeSitesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2338,22 +1659,6 @@ func ParseGetProbeSitesResponse(rsp *http.Response) (*GetProbeSitesResponse, err
 	return response, nil
 }
 
-// ParseStreamProbeSitesResponse parses an HTTP response from a StreamProbeSitesWithResponse call
-func ParseStreamProbeSitesResponse(rsp *http.Response) (*StreamProbeSitesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &StreamProbeSitesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
 // ParseTestProbeSitesResponse parses an HTTP response from a TestProbeSitesWithResponse call
 func ParseTestProbeSitesResponse(rsp *http.Response) (*TestProbeSitesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2370,58 +1675,6 @@ func ParseTestProbeSitesResponse(rsp *http.Response) (*TestProbeSitesResponse, e
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ProbeTestResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetRulesResponse parses an HTTP response from a GetRulesWithResponse call
-func ParseGetRulesResponse(rsp *http.Response) (*GetRulesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetRulesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest RulesResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseMatchRuleResponse parses an HTTP response from a MatchRuleWithResponse call
-func ParseMatchRuleResponse(rsp *http.Response) (*MatchRuleResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &MatchRuleResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest RuleMatchResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2458,162 +1711,6 @@ func ParseGetStatusResponse(rsp *http.Response) (*GetStatusResponse, error) {
 	return response, nil
 }
 
-// ParseGetTailscaleExitNodesResponse parses an HTTP response from a GetTailscaleExitNodesWithResponse call
-func ParseGetTailscaleExitNodesResponse(rsp *http.Response) (*GetTailscaleExitNodesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetTailscaleExitNodesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TailscaleExitNodesResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseSetTailscaleExitNodeResponse parses an HTTP response from a SetTailscaleExitNodeWithResponse call
-func ParseSetTailscaleExitNodeResponse(rsp *http.Response) (*SetTailscaleExitNodeResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &SetTailscaleExitNodeResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TailscaleExitNodeResult
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetMagicIPChoicesResponse parses an HTTP response from a GetMagicIPChoicesWithResponse call
-func ParseGetMagicIPChoicesResponse(rsp *http.Response) (*GetMagicIPChoicesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMagicIPChoicesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MagicIPChoicesResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDeleteMagicIPChoiceResponse parses an HTTP response from a DeleteMagicIPChoiceWithResponse call
-func ParseDeleteMagicIPChoiceResponse(rsp *http.Response) (*DeleteMagicIPChoiceResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteMagicIPChoiceResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MagicIPDeleteResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDecideMagicIPResponse parses an HTTP response from a DecideMagicIPWithResponse call
-func ParseDecideMagicIPResponse(rsp *http.Response) (*DecideMagicIPResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DecideMagicIPResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MagicIPDecideResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetMagicIPPendingResponse parses an HTTP response from a GetMagicIPPendingWithResponse call
-func ParseGetMagicIPPendingResponse(rsp *http.Response) (*GetMagicIPPendingResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMagicIPPendingResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MagicIPPendingResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseGetTopologyResponse parses an HTTP response from a GetTopologyWithResponse call
 func ParseGetTopologyResponse(rsp *http.Response) (*GetTopologyResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2629,33 +1726,7 @@ func ParseGetTopologyResponse(rsp *http.Response) (*GetTopologyResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TopologyResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetTrafficResponse parses an HTTP response from a GetTrafficWithResponse call
-func ParseGetTrafficResponse(rsp *http.Response) (*GetTrafficResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetTrafficResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TrafficResponse
+		var dest TopologyGraph
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
